@@ -1,8 +1,7 @@
-.PHONY=dev db-migrate db-run db-connect docker-build docker-run
+.PHONY=dev test
 dev:
-	# cargo watch -x check -x clippy -x "test -- --test-threads 1"
-	cargo watch -x build -x clippy -x
+	cargo watch -x build -x clippy -x test
 
 test:
-	# no parallel test possible because of the clean_db() dependency of integration tests
+	# sequential tests
 	cargo test  -- --test-threads 1
