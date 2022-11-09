@@ -30,7 +30,9 @@ fn tree_walk<P: AsRef<Path>>(
 
 #[cfg(test)]
 mod tests {
-    use crate::{dir_walker, tree_walk};
+    use crate::dir_walker;
+    use assert_fs::{prelude::*, TempDir};
+    use std::path::PathBuf;
 
     #[test]
     fn print_project_files() -> std::io::Result<()> {
@@ -41,6 +43,56 @@ mod tests {
         for entry in actual {
             println!("{}", entry.to_str().unwrap());
         }
+        Ok(())
+    }
+
+    #[test]
+    fn dir_walker_single_file_test() -> std::io::Result<()> {
+        let temp = TempDir::new().unwrap();
+        let file = temp.child("file.txt");
+        file.touch().unwrap();
+
+        let actual = dir_walker(temp.path())?;
+
+        println!("{:?}", actual);
+
+        let expected = 1;
+        assert_eq!(expected, actual.len());
+
+        let expected_filename = temp.join("file.txt");
+        assert_eq!(
+            expected_filename.to_str().unwrap(),
+            actual.get(0).unwrap().to_str().unwrap()
+        );
+
+        Ok(())
+    }
+
+    #[test]
+    fn dir_walker_subdir_test() -> std::io::Result<()> {
+        let temp = TempDir::new().unwrap();
+        let file = temp.child("file.txt");
+        file.touch().unwrap();
+        let file1 = temp.child("subdir/file1.txt");
+        file1.touch().unwrap();
+        let file2 = temp.child("subdir/file2.txt");
+        file2.touch().unwrap();
+
+        let actual = dir_walker(temp.path())?;
+
+        println!("{:?}", actual);
+
+        let expected = 4;
+        assert_eq!(expected, actual.len());
+
+        let expected = vec![
+            temp.join("file.txt"),
+            temp.join("subdir"),
+            temp.join("subdir/file1.txt"),
+            temp.join("subdir/file2.txt"),
+        ];
+        assert_eq!(expected, actual);
+
         Ok(())
     }
 }
