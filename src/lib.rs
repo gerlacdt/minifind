@@ -1,3 +1,4 @@
+use anyhow::{Context, Result};
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -7,20 +8,21 @@ pub fn hello_world() {
     println!("Hello world")
 }
 
-fn dir_walker<P: AsRef<Path>>(path: P) -> std::io::Result<Vec<PathBuf>> {
+fn dir_walker<P: AsRef<Path>>(path: P) -> Result<Vec<PathBuf>> {
     let mut results: Vec<PathBuf> = vec![];
-    tree_walk(path, &mut results);
+    tree_walk(path, &mut results).context("Failed tree_walk()")?;
     Ok(results)
 }
 
-fn tree_walk<P: AsRef<Path>>(
-    path: P,
-    results: &mut Vec<PathBuf>,
-) -> std::io::Result<&Vec<PathBuf>> {
+fn tree_walk<P: AsRef<Path>>(path: P, results: &mut Vec<PathBuf>) -> Result<&Vec<PathBuf>> {
     for entry in fs::read_dir(path)? {
-        let dir = entry?;
+        let dir = entry.context("Failed to extract directory")?;
         results.push(dir.path());
-        if dir.file_type()?.is_dir() {
+        if dir
+            .file_type()
+            .context("Failed to extraced file type")?
+            .is_dir()
+        {
             tree_walk(dir.path(), results);
         }
     }
@@ -31,14 +33,13 @@ fn tree_walk<P: AsRef<Path>>(
 #[cfg(test)]
 mod tests {
     use crate::dir_walker;
+    use anyhow::{Context, Result};
     use assert_fs::{prelude::*, TempDir};
-    use std::path::PathBuf;
 
     #[test]
-    fn print_project_files() -> std::io::Result<()> {
-        // let path = "/home/gerlacdt/src/rust/minifind";
+    fn print_project_files() -> Result<()> {
         let path = ".";
-        let actual = dir_walker(path)?;
+        let actual = dir_walker(path).context("Failed dir_walker()")?;
 
         for entry in actual {
             println!("{}", entry.to_str().unwrap());
@@ -47,12 +48,12 @@ mod tests {
     }
 
     #[test]
-    fn dir_walker_single_file_test() -> std::io::Result<()> {
+    fn dir_walker_single_file_test() -> Result<()> {
         let temp = TempDir::new().unwrap();
         let file = temp.child("file.txt");
         file.touch().unwrap();
 
-        let actual = dir_walker(temp.path())?;
+        let actual = dir_walker(temp.path()).context("Failed dir_walker()")?;
 
         println!("{:?}", actual);
 
@@ -69,7 +70,7 @@ mod tests {
     }
 
     #[test]
-    fn dir_walker_subdir_test() -> std::io::Result<()> {
+    fn dir_walker_subdir_test() -> Result<()> {
         let temp = TempDir::new().unwrap();
         let file = temp.child("file.txt");
         file.touch().unwrap();
@@ -78,7 +79,7 @@ mod tests {
         let file2 = temp.child("subdir/file2.txt");
         file2.touch().unwrap();
 
-        let actual = dir_walker(temp.path())?;
+        let actual = dir_walker(temp.path()).context("Failed dir_walker()")?;
 
         println!("{:?}", actual);
 
