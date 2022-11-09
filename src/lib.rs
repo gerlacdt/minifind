@@ -4,8 +4,26 @@ use std::{
     path::{Path, PathBuf},
 };
 
+pub mod clap;
+
 pub fn hello_world() {
     println!("Hello world")
+}
+
+pub struct Options {
+    pub directory: String,
+}
+
+pub fn find(opts: Options) -> Result<()> {
+    let results = dir_walker(opts.directory).context("Failed directory walking")?;
+    output(results);
+    Ok(())
+}
+
+fn output(filenames: Vec<PathBuf>) {
+    for f in filenames {
+        println!("{}", f.to_str().unwrap());
+    }
 }
 
 fn dir_walker<P: AsRef<Path>>(path: P) -> Result<Vec<PathBuf>> {
