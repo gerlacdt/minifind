@@ -267,6 +267,7 @@ dependencies = [
  "assert_fs",
  "clap",
  "predicates",
+ "regex",
 ]
 
 [[package]]
