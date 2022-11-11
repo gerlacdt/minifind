@@ -41,7 +41,7 @@ fn tree_walk<P: AsRef<Path>>(path: P, results: &mut Vec<PathBuf>) -> Result<&Vec
             .context("Failed to extraced file type")?
             .is_dir()
         {
-            tree_walk(dir.path(), results);
+            tree_walk(dir.path(), results)?;
         }
     }
 
