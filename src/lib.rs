@@ -47,7 +47,7 @@ fn tree_walk<'a, P: AsRef<Path>>(
     results: &'a mut Vec<PathBuf>,
     pattern: Option<&Regex>,
     filetype: Option<&str>,
-) -> Result<&'a Vec<PathBuf>> {
+) -> Result<()> {
     for entry in fs::read_dir(path)? {
         let dir = entry.context("Failed to extract directory")?;
         if is_ok(&dir, pattern, filetype) {
@@ -62,7 +62,7 @@ fn tree_walk<'a, P: AsRef<Path>>(
         }
     }
 
-    Ok(results)
+    Ok(())
 }
 
 fn is_ok(dir: &DirEntry, pattern: Option<&Regex>, filetype: Option<&str>) -> bool {
