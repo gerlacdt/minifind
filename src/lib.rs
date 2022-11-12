@@ -7,10 +7,6 @@ use std::{
 
 pub mod clap;
 
-pub fn hello_world() {
-    println!("Hello world")
-}
-
 pub struct Options {
     pub directory: String,
     pub pattern: Option<Regex>,
