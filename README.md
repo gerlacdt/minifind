@@ -23,8 +23,10 @@ target/debug/minifind .
 
 # search recursively in current directory for filenames including "git"
 target/debug/minifind . --pattern "git"
-```
 
+# search recursively in current directory for directories with names like "git"
+target/debug/minifind . -p git --filetype d
+```
 
 ### Development
 

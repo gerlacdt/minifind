@@ -9,6 +9,7 @@ fn main() -> anyhow::Result<()> {
     let opts = Options {
         directory: args.directory,
         pattern,
+        filetype: args.filetype,
     };
     find(opts)?;
     Ok(())
