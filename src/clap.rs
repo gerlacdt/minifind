@@ -1,4 +1,4 @@
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 
 #[derive(Parser, Debug)]
 pub struct Args {
@@ -9,7 +9,13 @@ pub struct Args {
     /// regular expression to filter filenames
     pub pattern: Option<String>,
 
-    #[arg(short, long)]
-    /// filetype: d or f for directory or normal file
-    pub filetype: Option<String>,
+    #[arg(short, long, value_enum)]
+    /// filetype to search for
+    pub filetype: Option<FileType>,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
+pub enum FileType {
+    Dir,
+    File,
 }

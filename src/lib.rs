@@ -1,3 +1,4 @@
+use crate::clap::FileType;
 use anyhow::{Context, Result};
 use regex::Regex;
 use std::{
@@ -10,12 +11,12 @@ pub mod clap;
 pub struct Options {
     pub directory: String,
     pub pattern: Option<Regex>,
-    pub filetype: Option<String>,
+    pub filetype: Option<FileType>,
 }
 
 pub fn find(opts: Options) -> Result<()> {
     let pattern = opts.pattern.as_ref();
-    let filetype = opts.filetype.as_deref();
+    let filetype = opts.filetype;
     let results =
         dir_walker(opts.directory, pattern, filetype).context("Failed directory walking")?;
     output(results);
@@ -31,18 +32,18 @@ fn output(filenames: Vec<PathBuf>) {
 fn dir_walker<P: AsRef<Path>>(
     path: P,
     pattern: Option<&Regex>,
-    filetype: Option<&str>,
+    filetype: Option<FileType>,
 ) -> Result<Vec<PathBuf>> {
     let mut results: Vec<PathBuf> = vec![];
     tree_walk(path, &mut results, pattern, filetype).context("Failed tree_walk()")?;
     Ok(results)
 }
 
-fn tree_walk<'a, P: AsRef<Path>>(
+fn tree_walk<P: AsRef<Path>>(
     path: P,
-    results: &'a mut Vec<PathBuf>,
+    results: &mut Vec<PathBuf>,
     pattern: Option<&Regex>,
-    filetype: Option<&str>,
+    filetype: Option<FileType>,
 ) -> Result<()> {
     for entry in fs::read_dir(path)? {
         let dir = entry.context("Failed to extract directory")?;
@@ -61,15 +62,15 @@ fn tree_walk<'a, P: AsRef<Path>>(
     Ok(())
 }
 
-fn is_ok(dir: &DirEntry, pattern: Option<&Regex>, filetype: Option<&str>) -> bool {
+fn is_ok(dir: &DirEntry, pattern: Option<&Regex>, filetype: Option<FileType>) -> bool {
     if let Some(re) = pattern {
         if !re.is_match(dir.path().to_str().unwrap()) {
             return false;
         }
     }
     if let Some(ft) = filetype {
-        if !((dir.metadata().unwrap().is_dir() && ft == "d")
-            || (dir.metadata().unwrap().is_file() && ft == "f"))
+        if !((dir.metadata().unwrap().is_dir() && ft == FileType::Dir)
+            || (dir.metadata().unwrap().is_file() && ft == FileType::File))
         {
             return false;
         }
@@ -79,7 +80,7 @@ fn is_ok(dir: &DirEntry, pattern: Option<&Regex>, filetype: Option<&str>) -> boo
 
 #[cfg(test)]
 mod tests {
-    use crate::dir_walker;
+    use crate::{clap::FileType, dir_walker};
     use anyhow::{Context, Result};
     use assert_fs::{prelude::*, TempDir};
     use regex::Regex;
@@ -165,7 +166,7 @@ mod tests {
     #[test]
     fn find_with_filetype_test() -> Result<()> {
         let temp_dir = setup_fs();
-        let filetype = Some("d");
+        let filetype = Some(FileType::Dir);
         let actual = dir_walker(temp_dir.path(), None, filetype).context("Failed dir_walker()")?;
 
         println!("{:?}", actual);
@@ -183,7 +184,7 @@ mod tests {
     fn find_with_pattern_and_filetype_test() -> Result<()> {
         let temp_dir = setup_fs();
         let pattern = Regex::new(r#"file.txt"#).unwrap();
-        let filetype = Some("f");
+        let filetype = Some(FileType::File);
         let actual =
             dir_walker(temp_dir.path(), Some(&pattern), filetype).context("Failed dir_walker()")?;
 
@@ -202,7 +203,7 @@ mod tests {
     fn find_with_pattern_and_filetype_nomatch_test() -> Result<()> {
         let temp_dir = setup_fs();
         let pattern = Regex::new(r#"file.txt"#).unwrap();
-        let filetype = Some("d");
+        let filetype = Some(FileType::Dir);
         let actual =
             dir_walker(temp_dir.path(), Some(&pattern), filetype).context("Failed dir_walker()")?;
 
