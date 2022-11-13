@@ -85,31 +85,7 @@ mod tests {
     use regex::Regex;
     use std::path::PathBuf;
 
-    #[test]
-    fn find_single_file_test() -> Result<()> {
-        let temp = TempDir::new().unwrap();
-        let file = temp.child("file.txt");
-        file.touch().unwrap();
-        let pattern = None;
-        let filetype = None;
-        let actual = dir_walker(temp.path(), pattern, filetype).context("Failed dir_walker()")?;
-
-        println!("{:?}", actual);
-
-        let expected = 1;
-        assert_eq!(expected, actual.len());
-
-        let expected_filename = temp.join("file.txt");
-        assert_eq!(
-            expected_filename.to_str().unwrap(),
-            actual.get(0).unwrap().to_str().unwrap()
-        );
-
-        Ok(())
-    }
-
-    #[test]
-    fn find_with_subdir_test() -> Result<()> {
+    fn setup_fs() -> TempDir {
         let temp = TempDir::new().unwrap();
         let file = temp.child("file.txt");
         file.touch().unwrap();
@@ -117,9 +93,16 @@ mod tests {
         file1.touch().unwrap();
         let file2 = temp.child("subdir/file2.txt");
         file2.touch().unwrap();
+        temp
+    }
+
+    #[test]
+    fn find_test() -> Result<()> {
+        let temp_dir = setup_fs();
         let pattern = None;
         let filetype = None;
-        let actual = dir_walker(temp.path(), pattern, filetype).context("Failed dir_walker()")?;
+        let actual =
+            dir_walker(temp_dir.path(), pattern, filetype).context("Failed dir_walker()")?;
 
         println!("{:?}", actual);
 
@@ -127,10 +110,10 @@ mod tests {
         assert_eq!(expected, actual.len());
 
         let expected = vec![
-            temp.join("file.txt"),
-            temp.join("subdir"),
-            temp.join("subdir/file1.txt"),
-            temp.join("subdir/file2.txt"),
+            temp_dir.join("file.txt"),
+            temp_dir.join("subdir"),
+            temp_dir.join("subdir/file1.txt"),
+            temp_dir.join("subdir/file2.txt"),
         ];
         assert_eq!(expected, actual);
 
@@ -138,43 +121,31 @@ mod tests {
     }
 
     #[test]
-    fn find_with_subdir_and_pattern_test() -> Result<()> {
-        let temp = TempDir::new().unwrap();
-        let file = temp.child("file.txt");
-        file.touch().unwrap();
-        let file1 = temp.child("subdir/file1.txt");
-        file1.touch().unwrap();
-        let file2 = temp.child("subdir/file2.txt");
-        file2.touch().unwrap();
+    fn find_with_pattern_test() -> Result<()> {
+        let temp_dir = setup_fs();
         let pattern = Regex::new(r#"file1.*"#).unwrap();
         let filetype = None;
         let actual =
-            dir_walker(temp.path(), Some(&pattern), filetype).context("Failed dir_walker()")?;
+            dir_walker(temp_dir.path(), Some(&pattern), filetype).context("Failed dir_walker()")?;
 
         println!("{:?}", actual);
 
         let expected = 1;
         assert_eq!(expected, actual.len());
 
-        let expected = vec![temp.join("subdir/file1.txt")];
+        let expected = vec![temp_dir.join("subdir/file1.txt")];
         assert_eq!(expected, actual);
 
         Ok(())
     }
 
     #[test]
-    fn find_with_subdir_and_pattern_multimatch_test() -> Result<()> {
-        let temp = TempDir::new().unwrap();
-        let file = temp.child("file.txt");
-        file.touch().unwrap();
-        let file1 = temp.child("subdir/file1.txt");
-        file1.touch().unwrap();
-        let file2 = temp.child("subdir/file2.txt");
-        file2.touch().unwrap();
+    fn find_with_pattern_multimatch_test() -> Result<()> {
+        let temp_dir = setup_fs();
         let pattern = Regex::new(r#"file"#).unwrap();
         let filetype = None;
         let actual =
-            dir_walker(temp.path(), Some(&pattern), filetype).context("Failed dir_walker()")?;
+            dir_walker(temp_dir.path(), Some(&pattern), filetype).context("Failed dir_walker()")?;
 
         println!("{:?}", actual);
 
@@ -182,9 +153,9 @@ mod tests {
         assert_eq!(expected, actual.len());
 
         let expected = vec![
-            temp.join("file.txt"),
-            temp.join("subdir/file1.txt"),
-            temp.join("subdir/file2.txt"),
+            temp_dir.join("file.txt"),
+            temp_dir.join("subdir/file1.txt"),
+            temp_dir.join("subdir/file2.txt"),
         ];
         assert_eq!(expected, actual);
 
@@ -192,67 +163,48 @@ mod tests {
     }
 
     #[test]
-    fn dir_walker_subdir_filetype_dir_test() -> Result<()> {
-        let temp = TempDir::new().unwrap();
-        let file = temp.child("file.txt");
-        file.touch().unwrap();
-        let file1 = temp.child("subdir/file1.txt");
-        file1.touch().unwrap();
-        let file2 = temp.child("subdir/file2.txt");
-        file2.touch().unwrap();
+    fn find_with_filetype_test() -> Result<()> {
+        let temp_dir = setup_fs();
         let filetype = Some("d");
-        let actual = dir_walker(temp.path(), None, filetype).context("Failed dir_walker()")?;
+        let actual = dir_walker(temp_dir.path(), None, filetype).context("Failed dir_walker()")?;
 
         println!("{:?}", actual);
 
         let expected = 1;
         assert_eq!(expected, actual.len());
 
-        let expected = vec![temp.join("subdir")];
+        let expected = vec![temp_dir.join("subdir")];
         assert_eq!(expected, actual);
 
         Ok(())
     }
 
     #[test]
-    fn find_with_subdir_and_pattern_and_filetype_test() -> Result<()> {
-        let temp = TempDir::new().unwrap();
-        let file = temp.child("file.txt");
-        file.touch().unwrap();
-        let file1 = temp.child("subdir/file1.txt");
-        file1.touch().unwrap();
-        let file2 = temp.child("subdir/file2.txt");
-        file2.touch().unwrap();
+    fn find_with_pattern_and_filetype_test() -> Result<()> {
+        let temp_dir = setup_fs();
         let pattern = Regex::new(r#"file.txt"#).unwrap();
         let filetype = Some("f");
-        // let filetype = None;
         let actual =
-            dir_walker(temp.path(), Some(&pattern), filetype).context("Failed dir_walker()")?;
+            dir_walker(temp_dir.path(), Some(&pattern), filetype).context("Failed dir_walker()")?;
 
         println!("{:?}", actual);
 
         let expected = 1;
         assert_eq!(expected, actual.len());
 
-        let expected = vec![temp.join("file.txt")];
+        let expected = vec![temp_dir.join("file.txt")];
         assert_eq!(expected, actual);
 
         Ok(())
     }
 
     #[test]
-    fn find_with_subdir_and_pattern_and_filetype_nomatch_test() -> Result<()> {
-        let temp = TempDir::new().unwrap();
-        let file = temp.child("file.txt");
-        file.touch().unwrap();
-        let file1 = temp.child("subdir/file1.txt");
-        file1.touch().unwrap();
-        let file2 = temp.child("subdir/file2.txt");
-        file2.touch().unwrap();
+    fn find_with_pattern_and_filetype_nomatch_test() -> Result<()> {
+        let temp_dir = setup_fs();
         let pattern = Regex::new(r#"file.txt"#).unwrap();
         let filetype = Some("d");
         let actual =
-            dir_walker(temp.path(), Some(&pattern), filetype).context("Failed dir_walker()")?;
+            dir_walker(temp_dir.path(), Some(&pattern), filetype).context("Failed dir_walker()")?;
 
         println!("{:?}", actual);
 
