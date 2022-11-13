@@ -86,20 +86,7 @@ mod tests {
     use std::path::PathBuf;
 
     #[test]
-    fn print_project_files() -> Result<()> {
-        let path = ".";
-        let pattern = None;
-        let filetype = None;
-        let actual = dir_walker(path, pattern, filetype).context("Failed dir_walker()")?;
-
-        for entry in actual {
-            println!("{}", entry.to_str().unwrap());
-        }
-        Ok(())
-    }
-
-    #[test]
-    fn dir_walker_single_file_test() -> Result<()> {
+    fn find_single_file_test() -> Result<()> {
         let temp = TempDir::new().unwrap();
         let file = temp.child("file.txt");
         file.touch().unwrap();
@@ -122,7 +109,7 @@ mod tests {
     }
 
     #[test]
-    fn dir_walker_subdir_test() -> Result<()> {
+    fn find_with_subdir_test() -> Result<()> {
         let temp = TempDir::new().unwrap();
         let file = temp.child("file.txt");
         file.touch().unwrap();
@@ -151,7 +138,7 @@ mod tests {
     }
 
     #[test]
-    fn dir_walker_subdir_pattern_test() -> Result<()> {
+    fn find_with_subdir_and_pattern_test() -> Result<()> {
         let temp = TempDir::new().unwrap();
         let file = temp.child("file.txt");
         file.touch().unwrap();
@@ -176,7 +163,7 @@ mod tests {
     }
 
     #[test]
-    fn dir_walker_subdir_pattern_multimatch_test() -> Result<()> {
+    fn find_with_subdir_and_pattern_multimatch_test() -> Result<()> {
         let temp = TempDir::new().unwrap();
         let file = temp.child("file.txt");
         file.touch().unwrap();
@@ -228,7 +215,7 @@ mod tests {
     }
 
     #[test]
-    fn dir_walker_subdir_pattern_and_filetype_test() -> Result<()> {
+    fn find_with_subdir_and_pattern_and_filetype_test() -> Result<()> {
         let temp = TempDir::new().unwrap();
         let file = temp.child("file.txt");
         file.touch().unwrap();
@@ -254,7 +241,7 @@ mod tests {
     }
 
     #[test]
-    fn dir_walker_subdir_correct_pattern_and_wrong_filetype_test() -> Result<()> {
+    fn find_with_subdir_and_pattern_and_filetype_nomatch_test() -> Result<()> {
         let temp = TempDir::new().unwrap();
         let file = temp.child("file.txt");
         file.touch().unwrap();
