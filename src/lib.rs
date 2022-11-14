@@ -1,5 +1,5 @@
 use crate::clap::FileType;
-use anyhow::{Context, Result};
+use anyhow::{Context, Error, Result};
 use regex::Regex;
 use std::{
     fs::{self, DirEntry},
@@ -47,7 +47,7 @@ fn tree_walk<P: AsRef<Path>>(
 ) -> Result<()> {
     for entry in fs::read_dir(path)? {
         let dir = entry.context("Failed to extract directory")?;
-        if is_ok(&dir, pattern, filetype) {
+        if is_ok(&dir, pattern, filetype)? {
             results.push(dir.path())
         }
         if dir
@@ -62,20 +62,24 @@ fn tree_walk<P: AsRef<Path>>(
     Ok(())
 }
 
-fn is_ok(dir: &DirEntry, pattern: Option<&Regex>, filetype: Option<FileType>) -> bool {
+fn is_ok(dir: &DirEntry, pattern: Option<&Regex>, filetype: Option<FileType>) -> Result<bool> {
     if let Some(re) = pattern {
-        if !re.is_match(dir.path().to_str().unwrap()) {
-            return false;
+        let pathbuf = dir.path();
+        let path = pathbuf.to_str().context("Invalid file path")?;
+
+        if !re.is_match(path) {
+            return Ok(false);
         }
     }
     if let Some(ft) = filetype {
-        if !((dir.metadata().unwrap().is_dir() && ft == FileType::Dir)
-            || (dir.metadata().unwrap().is_file() && ft == FileType::File))
+        let metadata = dir.metadata()?;
+        if !((metadata.is_dir() && ft == FileType::Dir)
+            || (metadata.is_file() && ft == FileType::File))
         {
-            return false;
+            return Ok(false);
         }
     }
-    true
+    Ok(true)
 }
 
 #[cfg(test)]
